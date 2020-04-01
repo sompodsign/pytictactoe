@@ -7,7 +7,29 @@ def display_board(board):
     print('   |   |   ')
     print(f' {board[0]} | {board[1]} | {board[2]}')
     print('   |   |   ')
-    print('-----------')
+    print('------------')
+    print('   |   |   ')
+    print(f' {board[0]} | {board[1]} | {board[2]}')
+    print('   |   |   ')
+    print('------------')
+    print('   |   |   ')
+    print(f' {board[0]} | {board[1]} | {board[2]}')
+    print('   |   |   ')
+
+def player_input():
+    marker = ''
+    while marker != 'X' and marker != 'O':
+        marker = input('Player1, choose X or O: ')
+    player1 = marker
+    
+    if player1 == 'X':
+        player2 = 'O'
+    else:
+        player2 = 'X'
+        
+    print(player1, player2)
+
+player_input()
 
 
 
@@ -15,6 +37,3 @@ def display_board(board):
 
 
 
-
-test_board = ['#','X','O','X','O','X','O','X','O','X']
-display_board(test_board)
