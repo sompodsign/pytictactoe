@@ -1,33 +1,41 @@
-import requests
-import bs4
+import os
+import sys
+import PyPDF2
 
-url = input('Enter the URL that you would like to verify the links for: ')
-res = requests.get(url)
-res.raise_for_status()
+password = sys.argv[1]
+encrypt_failed = []
 
-soup = bs4.BeautifulSoup(res.text, 'html.parser')
-links = soup.select('a')
-fof = []   # List of links that lead to a 404 page
+for folders, subfolders, filenames in os.walk('.'):
 
-for link in links:
-    try:
-        unmade_url = link['href']
-        if unmade_url.startswith('http'):
-            to_check = unmade_url
+    for filename in filenames:
+        if filename.endswith('.pdf'):
+            path = os.path.join(folders, filename)
+            pdf_reader = PyPDF2.PdfFileReader(open(path, 'rb'))
+            if pdf_reader.isEncrypted is False:
+                pdf_writer = PyPDF2.PdfFileWriter()
+                for page_num in range(pdf_reader.numPages):
+                    pdf_writer.addPage(pdf_reader.getPage(page_num))
 
-        elif unmade_url.startswith('//'):
-            to_check = 'https:' + unmade_url
+                # Encrypt copy of PDF and save with _encrypted suffix
+                pdf_writer.encrypt(password)
+                encrypted_path = path[:-4] + '_encrpyted.pdf'
+                encrypted_version = open(encrypted_path, 'wb')
+                pdf_writer.write(encrypted_version)
+                encrypted_version.close()
 
-        elif unmade_url.startswith('#'):
-            to_check = url + unmade_url
+                # Check file was encrypted properly
+                pdf_reader = PyPDF2.PdfFileReader(open(encrypted_path, 'rb'))
+                if (pdf_reader.isEncrypted is True
+                        and pdf_reader.decrypt(password) == 1):
+                    os.remove(path)
+                else:
+                    encrypt_failed.append(filename)
 
-        result = requests.get(to_check)
-
-        if result.status_code == 404:
-            fof.append(to_check)
-
-    except:
-        pass
-
-print('Links processed these ' + str(len(fof)) + ' returned error 404:')
-print('\n'.join(fof))
+if encrypt_failed != []:
+    print('The following files failed their encryption checks and were '
+          'not deleted:')
+    for filename in encrypt_failed:
+        print(filename)
+else:
+    print("All PDF's files in the folder tree have been encrypted successfully. "
+          "The original files have been deleted.")
